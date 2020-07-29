@@ -16,7 +16,10 @@ internal class ForwardFilterTest {
     private val response: ServletResponse = Mockito.mock(ServletResponse::class.java)
     private val chain: FilterChain = Mockito.mock(FilterChain::class.java)
     private val dispatcher: RequestDispatcher = Mockito.mock(RequestDispatcher::class.java)
-    private val filter : Filter = ForwardFilter()
+    private val filter : Filter = ForwardFilter(
+        mapOf(
+            "/info" to "/actuator/info")
+    )
 
     @After
     fun after() {
