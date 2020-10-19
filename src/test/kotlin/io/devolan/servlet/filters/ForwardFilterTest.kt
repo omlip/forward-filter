@@ -1,9 +1,8 @@
 package io.devolan.servlet.filters
 
-import org.junit.After
-import org.junit.Test
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.Mockito
+import io.mockk.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 import javax.servlet.Filter
 import javax.servlet.FilterChain
 import javax.servlet.RequestDispatcher
@@ -12,69 +11,52 @@ import javax.servlet.http.HttpServletRequest
 
 internal class ForwardFilterTest {
 
-    private val request: HttpServletRequest = Mockito.mock(HttpServletRequest::class.java)
-    private val response: ServletResponse = Mockito.mock(ServletResponse::class.java)
-    private val chain: FilterChain = Mockito.mock(FilterChain::class.java)
-    private val dispatcher: RequestDispatcher = Mockito.mock(RequestDispatcher::class.java)
-    private val filter : Filter = ForwardFilter(
+    private val request = mockk<HttpServletRequest>()
+    private val response = mockk<ServletResponse>()
+    private val chain = mockk<FilterChain>()
+    private val dispatcher = mockk<RequestDispatcher>()
+
+    private val filter: Filter = ForwardFilter(
         mapOf(
-            "/info" to "/actuator/info")
+            "/info" to "/actuator/info"
+        )
     )
 
-    @After
+    @AfterEach
     fun after() {
-        Mockito.clearInvocations<Any>(request, response, chain, dispatcher)
+        clearMocks(request, response, chain, dispatcher)
     }
 
     @Test
     fun `filter when path exist`() {
-
         // Prepare
-        Mockito.`when`(request.requestURI).thenReturn("/info")
-        Mockito.`when`(request.getRequestDispatcher(eq("/actuator/info")))
-            .thenReturn(dispatcher)
+        every { request.requestURI } returns "/info"
+        every { request.getRequestDispatcher("/actuator/info") } returns dispatcher
+        justRun { dispatcher.forward(request, response) }
 
         // execute
         filter.doFilter(request, response, chain)
 
         //Verify
-        Mockito.verify(dispatcher).forward(eq(request), eq(response))
+        verify {
+            dispatcher.forward(request, response)
+        }
     }
 
     @Test
     fun `filter when path does not exist`() {
 
         // Prepare
-        Mockito.`when`(request.requestURI).thenReturn("/unknown")
+        every { request.requestURI } returns "/unknown"
+        justRun { chain.doFilter(request, response) }
 
         // execute
         filter.doFilter(request, response, chain)
 
         //Verify
-        Mockito.verify(chain).doFilter(eq(request), eq(response))
+        verify {
+            chain.doFilter(request, response)
+        }
     }
+
 }
-
-/*
-@Test
-fun doFilter() {
-    val request = mockk<HttpServletRequest>()
-    val response = mockk<HttpServletResponse>()
-    val chain = mockk<FilterChain>()
-    val dispatcher = mockk<RequestDispatcher>()
-    val filter : Filter = io.devolan.servlet.filters.ForwardFilter()
-
-    // Prepare
-    every { request.requestURI } returns "/info"
-    every { request.getRequestDispatcher("/actuator/info") } returns dispatcher
-
-    // execute
-    filter.doFilter(request, response, chain)
-
-    //Verify
-    verify {
-        dispatcher.forward( eq(request), eq(response))
-    }
-}
-
- */
